@@ -1,0 +1,75 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>ChatBB</title>
+</head>
+
+<body>
+	<p>Chatea bb</p>
+	<form id="chat-form">
+	<p><input type="text" name="user" id="user" placeholder="Usuario"/><input type="text" name="msg" id="msg" placeholder="Mensaje"/>
+	<button type="submit">Send</button></p>
+	</form>
+	<div id="chat">
+	<ul id="chat-msgs">
+	</ul>
+	</div>
+
+	<script>
+	let lastmsg = 0;
+
+	function print_chat (data){
+		let lista = '';
+		lastmsg = data[data.length - 1].date;
+		for (let i = 0; i < data.length; i++){
+			lista += "<li>"+data[i].user+": "+data[i].msg+"</li>";
+			
+		}
+
+		//metemos en el div con id "chat" el valor de lista (user + mensaje)
+		document.getElementById("chat-msgs").innerHTML += lista;
+
+	}
+
+	const refresh_time = 500; //en milisegundos
+
+	document.getElementById("chat-form").addEventListener('submit', e => {
+		e.preventDefault();
+
+		let user = document.getElementById("user").value;
+		let msg = document.getElementById("msg").value;
+		document.getElementById("msg").value = "";
+		document.getElementById("msg").focus();
+
+		fetch("/submit", {
+			method: "POST",
+			headers: {
+				'Content-Type': 'text/json'
+			},
+			body: JSON.stringify({
+				chat_user: user,
+				chat_msg: msg
+			})
+		});
+
+	});
+
+	fetch("/recent")
+				.then( (response) => response.json() ) //mira si los datos son JSON y lo pasa a JS
+				.then( (data) => {
+				print_chat(data);
+				});
+
+	setInterval(() => {
+		fetch("/chat?last="+lastmsg)
+				.then( (response) => response.json() ) //mira si los datos son JSON y lo pasa a JS
+				.then( (data) => {
+				if (data.length == 0) return;
+				print_chat(data);
+				});
+		}, refresh_time);
+	</script>
+</body>
+</html>
